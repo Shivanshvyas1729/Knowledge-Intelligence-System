@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Intelligence System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Markdown Parser & Sanitizer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    <!-- KaTeX LaTeX Renderer -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <!-- Library/Database SVG Icon -->
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+                <div class="brand-info">
+                    <h1>Knowledge System</h1>
+                    <span><span class="status-dot"></span>Active Session</span>
+                </div>
+            </div>
+
+            <!-- Model Selection Panel -->
+            <div class="upload-panel" style="margin-bottom: 8px;">
+                <h3 class="section-title">AI Reasoning Model</h3>
+                <div class="loader-select-wrapper">
+                    <select class="loader-select" id="model-select">
+                        <option value="gpt-4.1-nano" selected>GPT-4.1 Nano (Default)</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Upload Zone -->
+            <div class="upload-panel">
+                <h3 class="section-title">Upload Documents</h3>
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon">
+                        <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <p>Drag & drop file here</p>
+                    <span>or click to browse</span>
+                    <input type="file" id="file-input" accept=".pdf,.docx,.txt,.csv,.xlsx,.pptx,.html,.md">
+                </div>
+                
+                <!-- Loader Selection Card -->
+                <div class="loader-selection-container" id="loader-selection-container" style="display: none;">
+                    <div class="loader-selection-title">Configure Loader</div>
+                    <div class="loader-selection-file" id="selected-filename">File: </div>
+                    <div class="loader-select-wrapper">
+                        <select class="loader-select" id="loader-select">
+                            <!-- filled dynamically -->
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="confirm-upload-btn">Confirm & Process</button>
+                </div>
+            </div>
+
+            <!-- Uploaded Files List -->
+            <div class="file-list-container">
+                <h3 class="section-title">Session Uploads (<span id="file-count">0</span>)</h3>
+                <div class="file-list" id="file-list">
+                    <!-- Dynamic File Items will go here -->
+                </div>
+            </div>
+
+            <!-- Control Actions -->
+            <div class="controls-panel">
+                <button class="btn btn-secondary" id="clear-btn">
+                    <!-- Reset/Trash icon -->
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Clear History
+                </button>
+            </div>
+        </aside>
+
+        <!-- CHAT INTERFACE -->
+        <main class="chat-panel">
+            <header class="chat-header">
+                <div class="chat-assistant-info">
+                    <div class="chat-avatar">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="chat-title">
+                        <h2>RAG AI Assistant</h2>
+                        <p>Ask questions about your uploaded documents</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Chat message logs -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Welcome system message -->
+                <div class="message-wrapper system">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content-box">
+                        <div class="message-bubble">
+                            Hello! I am your Intelligent Knowledge Assistant. Please upload documents in the sidebar and ask me anything about their contents!
+                        </div>
+                        <div class="message-meta" id="welcome-time">Just now</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat entry input -->
+            <div class="chat-input-container">
+                <form class="chat-input-form" id="chat-form">
+                    <input type="text" id="query-input" class="chat-input" placeholder="Ask a question about your documents..." autocomplete="off" required>
+                    <button type="submit" class="btn-send" id="send-btn">
+                        <!-- Send SVG icon -->
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+        </main>
+        
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            const fileCount = document.getElementById('file-count');
+            const clearBtn = document.getElementById('clear-btn');
+            const chatForm = document.getElementById('chat-form');
+            const queryInput = document.getElementById('query-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const sendBtn = document.getElementById('send-btn');
+            
+            let uploadedFilesList = [];
+            let loaderMetadata = {};
+            let pendingUploadFile = null;
+
+            // Fetch loader metadata
+            async function fetchLoaderMetadata() {
+                try {
+                    const response = await fetch('/loaders');
+                    if (response.ok) {
+                        loaderMetadata = await response.json();
+                    }
+                } catch (error) {
+                    console.error('Error fetching loader metadata:', error);
+                }
+            }
+            fetchLoaderMetadata();
+
+            // Set timestamps
+            const formatTime = () => {
+                const now = new Date();
+                return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            };
+            document.getElementById('welcome-time').innerText = formatTime();
+
+            // Drag and drop event listeners
+            dropzone.addEventListener('click', () => fileInput.click());
+            
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('dragover');
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) {
+                    onFileSelected(e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    onFileSelected(fileInput.files[0]);
+                }
+            });
+
+            // Handle file selection and loader routing
+            function onFileSelected(file) {
+                const filename = file.name;
+                const ext = '.' + filename.split('.').pop().toLowerCase();
+                const configContainer = document.getElementById('loader-selection-container');
+                configContainer.style.display = 'none';
+
+                // Clear any previous pending item first
+                const existingPending = document.getElementById('file_pending');
+                if (existingPending) existingPending.remove();
+
+                if (!loaderMetadata || Object.keys(loaderMetadata).length === 0) {
+                    handleFileUpload(file, 'default');
+                    return;
+                }
+
+                if (!(ext in loaderMetadata)) {
+                    appendSystemMessage(`Unsupported file type. Please upload one of the supported formats: PDF, DOCX, TXT, CSV, XLSX, PPTX, HTML, or Markdown.`, 'error');
+                    return;
+                }
+
+                const options = loaderMetadata[ext];
+                const keys = Object.keys(options);
+
+                if (keys.length === 1) {
+                    // Direct upload if single loader is available
+                    handleFileUpload(file, keys[0]);
+                } else {
+                    // Show pending item in the uploads list immediately so the user has visual confirmation
+                    pendingUploadFile = file;
+                    
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.id = 'file_pending';
+                    fileItem.innerHTML = `
+                        <div class="file-item-icon">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="file-item-info">
+                            <div class="file-item-name" title="${filename}">${filename}</div>
+                            <div class="file-item-status status-pending">
+                                Waiting for loader config...
+                            </div>
+                        </div>
+                    `;
+                    fileList.appendChild(fileItem);
+
+                    document.getElementById('selected-filename').innerText = `File: ${filename}`;
+                    
+                    const selectEl = document.getElementById('loader-select');
+                    selectEl.innerHTML = '';
+                    keys.forEach(key => {
+                        const opt = document.createElement('option');
+                        opt.value = key;
+                        opt.innerText = options[key];
+                        selectEl.appendChild(opt);
+                    });
+
+                    configContainer.style.display = 'flex';
+                }
+            }
+
+            // Confirm selection callback
+            const confirmUploadBtn = document.getElementById('confirm-upload-btn');
+            confirmUploadBtn.addEventListener('click', () => {
+                const selectEl = document.getElementById('loader-select');
+                const selectedPriority = selectEl.value;
+                const configContainer = document.getElementById('loader-selection-container');
+                
+                if (pendingUploadFile) {
+                    configContainer.style.display = 'none';
+                    // Remove visual pending placeholder before running full upload function
+                    const existingPending = document.getElementById('file_pending');
+                    if (existingPending) existingPending.remove();
+                    
+                    handleFileUpload(pendingUploadFile, selectedPriority);
+                    pendingUploadFile = null;
+                }
+            });
+
+            // Handle file upload with priority
+            async function handleFileUpload(file, priority = 'default') {
+                const filename = file.name;
+                const fileId = 'file_' + Date.now();
+
+                // Create visual item in list with pending status
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.id = fileId;
+                fileItem.innerHTML = `
+                    <div class="file-item-icon">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="file-item-info">
+                        <div class="file-item-name">${filename}</div>
+                        <div class="file-item-status status-pending" id="status_${fileId}">
+                            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="typing-indicator" style="display:inline-block; vertical-align:middle; animation: spin 1s linear infinite;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89"></path>
+                            </svg>
+                            Processing...
+                        </div>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+                
+                // Formulate request
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('priority', priority);
+
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Success update
+                        document.getElementById(`status_${fileId}`).className = 'file-item-status status-success';
+                        document.getElementById(`status_${fileId}`).innerHTML = `
+                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Processed (${data.chunks_processed || 0} chunks)
+                        `;
+                        uploadedFilesList.push(filename);
+                        fileCount.innerText = uploadedFilesList.length;
+                        
+                        appendSystemMessage(`Successfully uploaded and indexed "${filename}" into the knowledge base using loader style: "${priority}".`);
+                    } else {
+                        throw new Error(data.error || 'Unknown upload error');
+                    }
+                } catch (error) {
+                    document.getElementById(`status_${fileId}`).className = 'file-item-status status-error';
+                    document.getElementById(`status_${fileId}`).innerHTML = `
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        Error: ${error.message}
+                    `;
+                    appendSystemMessage(`Failed to process "${filename}": ${error.message}`, 'error');
+                }
+            }
+
+            // Append bot or system notifications to chat
+            function appendSystemMessage(text, type = 'info') {
+                const msgWrapper = document.createElement('div');
+                msgWrapper.className = 'message-wrapper system';
+                msgWrapper.innerHTML = `
+                    <div class="message-avatar">Sys</div>
+                    <div class="message-content-box">
+                        <div class="message-bubble" style="${type === 'error' ? 'border-color: var(--error-color); color: #f87171;' : ''}">
+                            ${text}
+                        </div>
+                        <div class="message-meta">${formatTime()}</div>
+                    </div>
+                `;
+                chatMessages.appendChild(msgWrapper);
+                scrollToBottom();
+            }
+
+            // Handle chat querying
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const question = queryInput.value.trim();
+                if (!question) return;
+
+                // Add user bubble
+                const userWrapper = document.createElement('div');
+                userWrapper.className = 'message-wrapper user';
+                userWrapper.innerHTML = `
+                    <div class="message-avatar">ME</div>
+                    <div class="message-content-box">
+                        <div class="message-bubble">${escapeHtml(question)}</div>
+                        <div class="message-meta">${formatTime()}</div>
+                    </div>
+                `;
+                chatMessages.appendChild(userWrapper);
+                
+                // Clear input and disable interface
+                queryInput.value = '';
+                queryInput.disabled = true;
+                sendBtn.disabled = true;
+                
+                // Add loader placeholder
+                const loaderId = 'loader_' + Date.now();
+                const loaderWrapper = document.createElement('div');
+                loaderWrapper.className = 'message-wrapper system';
+                loaderWrapper.id = loaderId;
+                loaderWrapper.innerHTML = `
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content-box">
+                        <div class="message-bubble">
+                            <div class="typing-indicator">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(loaderWrapper);
+                scrollToBottom();
+
+                const modelSelect = document.getElementById('model-select');
+                const selectedModel = modelSelect ? modelSelect.value : 'gpt-4.1-nano';
+
+                try {
+                    const response = await fetch('/query', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ question: question, model: selectedModel })
+                    });
+
+                    const data = await response.json();
+
+                    // Remove loader
+                    document.getElementById(loaderId).remove();
+
+                    if (response.ok) {
+                        const botWrapper = document.createElement('div');
+                        botWrapper.className = 'message-wrapper system';
+
+                        const avatar = document.createElement('div');
+                        avatar.className = 'message-avatar';
+                        avatar.innerText = 'AI';
+
+                        const contentBox = document.createElement('div');
+                        contentBox.className = 'message-content-box';
+
+                        const bubble = document.createElement('div');
+                        bubble.className = 'message-bubble';
+                        bubble.innerHTML = DOMPurify.sanitize(marked.parse(data.response));
+
+                        // Render LaTeX formulas
+                        renderMathInElement(bubble, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\(', right: '\\)', display: false},
+                                {left: '\\[', right: '\\]', display: true}
+                            ],
+                            throwOnError: false
+                        });
+
+                        const meta = document.createElement('div');
+                        meta.className = 'message-meta';
+                        meta.innerText = formatTime();
+
+                        contentBox.appendChild(bubble);
+                        contentBox.appendChild(meta);
+                        botWrapper.appendChild(avatar);
+                        botWrapper.appendChild(contentBox);
+                        chatMessages.appendChild(botWrapper);
+                    } else {
+                        throw new Error(data.error || 'Server error generating answer');
+                    }
+                } catch (error) {
+                    if (document.getElementById(loaderId)) {
+                        document.getElementById(loaderId).remove();
+                    }
+                    const errorWrapper = document.createElement('div');
+                    errorWrapper.className = 'message-wrapper system';
+                    errorWrapper.innerHTML = `
+                        <div class="message-avatar">AI</div>
+                        <div class="message-content-box">
+                            <div class="message-bubble" style="border-color: var(--error-color); color: #f87171;">
+                                Error: ${error.message}
+                            </div>
+                            <div class="message-meta">${formatTime()}</div>
+                        </div>
+                    `;
+                    chatMessages.appendChild(errorWrapper);
+                } finally {
+                    queryInput.disabled = false;
+                    sendBtn.disabled = false;
+                    queryInput.focus();
+                    scrollToBottom();
+                }
+            });
+
+            // Handle Clear History
+            clearBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to clear your conversation history?')) {
+                    try {
+                        const response = await fetch('/clear', {
+                            method: 'POST'
+                        });
+
+                        if (response.ok) {
+                            // Reset messages
+                            chatMessages.innerHTML = `
+                                <div class="message-wrapper system">
+                                    <div class="message-avatar">AI</div>
+                                    <div class="message-content-box">
+                                        <div class="message-bubble">
+                                            Conversation history reset! How can I help you today?
+                                        </div>
+                                        <div class="message-meta">${formatTime()}</div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            alert('Failed to clear conversation history.');
+                        }
+                    } catch (error) {
+                        console.error('Error clearing history:', error);
+                        alert('Error clearing history.');
+                    }
+                }
+            });
+
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function escapeHtml(str) {
+                return str.replace(/[&<>'"]/g, 
+                    tag => ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        "'": '&#39;',
+                        '"': '&quot;'
+                    }[tag] || tag)
+                );
+            }
+        });
+    </script>
+    <style>
+        /* Spinning animation for loading loader icons */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</body>
+</html>
