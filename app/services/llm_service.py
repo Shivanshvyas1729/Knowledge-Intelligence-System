@@ -26,7 +26,7 @@ class LLMService:
             temperature=.7,
             model = "gpt-4.1-nano",
             api_key=Config.EURI_API_KEY,
-            base_url="https://api.euron.one/api/v1/euri"
+            base_url=Config.EURI_BASE_URL
         )
 
         retriever = vector_store.as_retriever()

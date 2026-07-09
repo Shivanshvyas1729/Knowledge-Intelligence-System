@@ -21,7 +21,7 @@ class VectorStore:
         self.embeddings = OpenAIEmbeddings(
             model="text-embedding-3-small",
             api_key=Config.EURI_API_KEY,
-            base_url="https://api.euron.one/api/v1/euri",
+            base_url=Config.EURI_BASE_URL,
         )
         self.vector_store = Chroma(
             persist_directory= persist_directory, 

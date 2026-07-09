@@ -23,42 +23,68 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ==========================================
+# Validate Environment & Secrets
+# ==========================================
+required_secrets = ["EURI_API_KEY", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_BUCKET_NAME"]
+missing_secrets = []
+for sec in required_secrets:
+    val = getattr(Config, sec, None)
+    if not val:
+        missing_secrets.append(sec)
+
+if missing_secrets:
+    st.error("⚠️ **Missing Configuration Secrets**")
+    st.markdown(
+        f"The application is missing required configuration settings: {', '.join([f'`{s}`' for s in missing_secrets])}"
+    )
+    st.markdown(
+        """
+        ### How to resolve this:
+        
+        **1. If running on Streamlit Cloud:**
+        - Click on the **Manage app** button in the lower right corner of your app.
+        - Go to **Settings** > **Secrets**.
+        - Paste your variables from your `.env` file (e.g., `EURI_API_KEY = "..."`) into the text box and click **Save**.
+        
+        **2. If running locally:**
+        - Create a `.env` file in the root directory of this project.
+        - Add your configuration keys:
+          ```env
+          SUPABASE_URL = "your_url"
+          SUPABASE_ANON_KEY = "your_key"
+          SUPABASE_SERVICE_ROLE_KEY = "your_key"
+          SUPABASE_BUCKET_NAME = "your_bucket"
+          EURI_API_KEY = "your_key"
+          EURI_BASE_URL = "https://api.euron.one/api/v1/euri"
+          ```
+        """
+    )
+    st.stop()
+
 # Custom Glassmorphic Dark-Mode Styles
 st.markdown(
     """
     <style>
-    /* Dark Theme Base & Font overrides */
+    /* Dark Theme Font overrides */
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif;
     }
     
-    /* Main Layout */
-    .stApp {
-        background: linear-gradient(135deg, #0f111a 0%, #151927 100%);
-        color: #e2e8f0;
-    }
-
-    /* Sidebar Styling */
-    [data-testid="stSidebar"] {
-        background-color: rgba(21, 25, 39, 0.85) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(15px);
-    }
-    
-    /* Title Header and Banner */
+    /* Title Header and Banner styling */
     .banner-container {
-        padding: 1.5rem;
-        background: rgba(255, 255, 255, 0.03);
+        padding: 1.5rem 2rem;
+        background: rgba(255, 255, 255, 0.02);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 16px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 0 20px rgba(129, 140, 248, 0.1);
         backdrop-filter: blur(8px);
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 1.2rem;
     }
     .banner-icon {
         font-size: 3rem;
@@ -69,53 +95,76 @@ st.markdown(
     .banner-title {
         font-family: 'Space Grotesk', sans-serif;
         font-weight: 700;
-        font-size: 2.2rem;
-        background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+        font-size: 2.3rem;
+        background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
     }
     
-    /* Custom buttons and forms style */
+    /* Styled Submit Buttons */
     .stButton > button {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: #0f111a !important;
+        color: #0c0f17 !important;
         font-weight: 600;
         border: none;
         border-radius: 8px;
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+        width: 100%;
     }
     .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
-        color: #0f111a !important;
+        color: #0c0f17 !important;
     }
     
     /* Custom secondary buttons */
     .sidebar-clear-btn .stButton > button {
-        background: rgba(239, 68, 68, 0.2) !important;
+        background: rgba(239, 68, 68, 0.15) !important;
         color: #f87171 !important;
-        border: 1px solid rgba(239, 68, 68, 0.4) !important;
+        border: 1px solid rgba(239, 68, 68, 0.3) !important;
         box-shadow: none !important;
     }
     .sidebar-clear-btn .stButton > button:hover {
-        background: rgba(239, 68, 68, 0.4) !important;
+        background: rgba(239, 68, 68, 0.3) !important;
         color: #ffffff !important;
-        border-color: rgba(239, 68, 68, 0.6) !important;
+        border-color: rgba(239, 68, 68, 0.5) !important;
+    }
+    
+    /* Clean Chat Message Bubble Cards */
+    div[data-testid="stChatMessage"] {
+        border-radius: 12px !important;
+        margin-bottom: 0.8rem !important;
+        padding: 1.2rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    }
+    /* Smart colored borders based on sender avatar */
+    div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar"] [aria-label="Avatar for assistant"]) {
+        border-left: 3px solid #4facfe !important;
+    }
+    div[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar"] [aria-label="Avatar for user"]) {
+        border-left: 3px solid #818cf8 !important;
     }
     
     /* File list style */
     .file-card {
-        padding: 0.5rem 0.8rem;
+        padding: 0.6rem 1rem;
         background: rgba(255, 255, 255, 0.02);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 8px;
         margin-bottom: 0.5rem;
         font-size: 0.85rem;
+        color: #cbd5e1;
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .file-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(129, 140, 248, 0.25);
+        transform: translateX(3px);
     }
     </style>
     """,
