@@ -1,10 +1,12 @@
 # with aws req.
 
 # langchain==0.0.267
-boto3
+# boto3
 
-flask
-werkzeug
+# flask
+# werkzeug
+# ipykernel
+# euriai
 
 langchain
 langchain-core
@@ -14,7 +16,7 @@ langchain-text-splitters
 
 
 openai
-euriai
+
 
 python-dotenv
 #it's easy to switch database if if use langchain-database instend direct database
@@ -23,7 +25,7 @@ langchain-chroma
 tiktoken
 
 supabase
-ipykernel
+
 
 # Document Parsers
 pypdf
@@ -31,3 +33,4 @@ pymupdf
 pdfplumber
 docx2txt
 unstructured
+streamlit
