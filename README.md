@@ -1,5 +1,8 @@
 # Knowledge Intelligence System
 
+live link
+https://knowledge-intelligence-system-4fwmsmrfpm67xeagnmgcoz.streamlit.app/
+
 A modern, high-performance **Retrieval-Augmented Generation (RAG)** application designed to ingest documents of various formats and let users converse with their contents using a Chat Assistant. The system features a responsive, dark-mode glassmorphic front-end interface, Supabase storage syncing, Chroma vector storage indexing, and LangChain orchestration.
 
 ---
