@@ -18,4 +18,4 @@ class Config:
     SUPABASE_SERVICE_ROLE_KEY :str = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     SUPABASE_BUCKET_NAME :str = os.getenv("SUPABASE_BUCKET_NAME")
     EURI_API_KEY :str = os.getenv("EURI_API_KEY")
-    VECTOR_DB_PATH :str = os.getenv("VECTOR_DB_PATH", "vector_db")
+    VECTOR_DB_PATH :str = "/tmp/vector_db" if os.getenv("VERCEL") else os.getenv("VECTOR_DB_PATH", "vector_db")

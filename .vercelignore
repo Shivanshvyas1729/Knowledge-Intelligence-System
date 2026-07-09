@@ -1,0 +1,11 @@
+.git
+.vscode
+.env
+.venv
+venv
+vector_db/
+logs/
+trail.ipynb
+demo/
+*.pyc
+__pycache__/

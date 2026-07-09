@@ -1,3 +1,9 @@
+import os
+import sys
+
+# Ensure Vercel can resolve relative imports from the app directory
+sys.path.insert(0, os.path.dirname(__file__))
+
 import shutil
 from tempfile import tempdir
 import tempfile
@@ -19,7 +25,10 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-app = Flask(__name__)
+# Configure explicit template and static paths for Vercel serverless compatibility
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 vector_store = VectorStore(Config.VECTOR_DB_PATH)
 storage_service = SupabaseStorage()

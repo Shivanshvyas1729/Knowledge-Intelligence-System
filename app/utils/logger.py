@@ -10,11 +10,12 @@ from uvicorn.config import LOG_LEVELS
 # Create logs directory path object
 LOG_DIR = Path('logs')
 
-# Create logs directory if it doesn't exist
-LOG_DIR.mkdir(exist_ok=True)
+# Create logs directory if it doesn't exist (skip on Vercel)
+if not os.getenv("VERCEL"):
+    LOG_DIR.mkdir(exist_ok=True)
 
 # Full path for log file
-LOG_FILE = LOG_DIR / "app.log"
+LOG_FILE = LOG_DIR / "app.log" if not os.getenv("VERCEL") else None
 
 # Get log level from environment variable
 # Default = INFO
@@ -56,25 +57,24 @@ def get_logger(name: str) -> logging.Logger:
 
     # ---------------- File Handler ----------------
 
-    # Rotating file handler:
-    # Creates new file after size limit reached
-    file_handler = RotatingFileHandler(
-        filename=LOG_FILE,
-        maxBytes=10 * 1024 * 1024,  # 10 MB max size
-        backupCount=5,              # Keep last 5 backup files
-        encoding="utf-8",
-    )
-
-    # Apply formatting to file logs
-    file_handler.setFormatter(formatter)
-
-    # ---------------- Add Handlers ----------------
-
     # Add console output handler
     logger.addHandler(console_handler)
 
-    # Add file logging handler
-    logger.addHandler(file_handler)
+    if LOG_FILE:
+        # Rotating file handler:
+        # Creates new file after size limit reached
+        file_handler = RotatingFileHandler(
+            filename=LOG_FILE,
+            maxBytes=10 * 1024 * 1024,  # 10 MB max size
+            backupCount=5,              # Keep last 5 backup files
+            encoding="utf-8",
+        )
+
+        # Apply formatting to file logs
+        file_handler.setFormatter(formatter)
+
+        # Add file logging handler
+        logger.addHandler(file_handler)
 
     # Prevent logs from propagating
     # to root logger multiple times
